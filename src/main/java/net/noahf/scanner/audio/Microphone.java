@@ -7,7 +7,7 @@ import java.sql.SQLOutput;
 
 public class Microphone {
 
-    public static int USE_MICROPHONE = -1;
+    public static int USE_MICROPHONE = 27;
 
     private final AudioFormat format;
     private final TargetDataLine microphone;

@@ -16,33 +16,37 @@ public class AudioListener {
 
     private final AudioFormat format;
     private final Microphone microphone;
-    private final Thread thread;
 
+    private Thread thread;
     private Consumer<AudioFrame> tick;
+
+    double[] frequencyHistory = new double[10];
+    int frequencyHistoryIndex = 0;
 
     public AudioListener() throws LineUnavailableException {
         this.format = new AudioFormat(SAMPLE_RATE, 16, 1, true, true);
         this.microphone = new Microphone(this.format);
-
-        this.thread = new Thread(() -> {
-            while (!Thread.currentThread().isInterrupted()) {
-                try {
-                    this.tick.accept(new AudioFrame(this));
-                } catch (Exception exception) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-        }, "ScannerListener::AudioListener");
-
-        this.thread.start();
     }
 
     public AudioFormat getAudioFormat() { return this.format; }
     public Microphone getMicrophone() { return this.microphone; }
     public Thread getListenerThread() { return this.thread; }
 
-    public void setTick(Consumer<AudioFrame> tick) {
+    public void setTick(Consumer<AudioFrame> tick) throws InterruptedException {
         this.tick = tick;
+
+        this.thread = new Thread(() -> {
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    this.tick.accept(new AudioFrame(this));
+                } catch (Exception exception) {
+                    System.out.println("An error occurred with the audio listener: " + exception);
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }, "ScannerListener::AudioListener");
+        this.thread.start();
+        this.thread.join();
     }
 
 }
