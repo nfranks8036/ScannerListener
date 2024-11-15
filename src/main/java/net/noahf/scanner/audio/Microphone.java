@@ -7,11 +7,11 @@ import java.sql.SQLOutput;
 
 public class Microphone {
 
-    public static int USE_MICROPHONE = 27;
+    public static int USE_MICROPHONE = 33;
 
     private final AudioFormat format;
     private final TargetDataLine microphone;
-    private final String selectedMicrophone;
+    private final Mixer.Info selectedMicrophone;
 
     public Microphone(AudioFormat format) throws LineUnavailableException {
         this.format = format;
@@ -24,15 +24,19 @@ public class Microphone {
         }
 
         if (USE_MICROPHONE == -1) { // use default
-            this.selectedMicrophone = "default";
+
+            this.selectedMicrophone = null;
             this.microphone = AudioSystem.getTargetDataLine(format);
+
         } else {
-            Mixer.Info selectedMixer = mixers[USE_MICROPHONE];
-            this.selectedMicrophone = selectedMixer.getName();
-            Mixer mixer = AudioSystem.getMixer(selectedMixer);
+
+            this.selectedMicrophone = mixers[USE_MICROPHONE];
+            Mixer mixer = AudioSystem.getMixer(this.selectedMicrophone);
             this.microphone = (TargetDataLine) mixer.getLine(new DataLine.Info(TargetDataLine.class, format));
+
         }
-        System.out.println("Selected Microphone: " + this.getSelectedMicrophone());
+
+        System.out.println("Selected Microphone: " + this.getSelectedMicrophone().getName());
 
         this.microphone.open(format, Main.BUFFER_SIZE);
         this.microphone.start();
@@ -42,8 +46,17 @@ public class Microphone {
         return this.microphone;
     }
 
-    public String getSelectedMicrophone() {
+    public Mixer.Info getSelectedMicrophone() {
         return this.selectedMicrophone;
+    }
+
+
+    public TargetDataLine openNewLine() throws LineUnavailableException {
+        Mixer mixer = AudioSystem.getMixer(this.selectedMicrophone);
+        TargetDataLine microphone = (TargetDataLine) mixer.getLine(new DataLine.Info(TargetDataLine.class, format));
+        microphone.open(format, Main.BUFFER_SIZE);
+        microphone.start();
+        return microphone;
     }
 
 }

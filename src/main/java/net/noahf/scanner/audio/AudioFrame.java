@@ -1,6 +1,7 @@
 package net.noahf.scanner.audio;
 
 import net.noahf.scanner.Main;
+import net.noahf.scanner.recording.Recorder;
 import org.jtransforms.fft.DoubleFFT_1D;
 
 import javax.sound.sampled.TargetDataLine;
@@ -14,7 +15,7 @@ public class AudioFrame {
     private final double[] samples = new double[Main.BUFFER_SIZE / 2];
     private final int bytesRead;
     private final double frequency;
-    private final double smoothedFrequency;
+    private final double averageFrequency;
 
     AudioFrame(AudioListener listener) {
         this.listener = listener;
@@ -31,7 +32,7 @@ public class AudioFrame {
 
         listener.frequencyHistory[listener.frequencyHistoryIndex] = this.frequency;
         listener.frequencyHistoryIndex = (listener.frequencyHistoryIndex + 1) % listener.frequencyHistory.length;
-        this.smoothedFrequency = Arrays.stream(listener.frequencyHistory).average().orElse(this.frequency);
+        this.averageFrequency = Arrays.stream(listener.frequencyHistory).average().orElse(this.frequency);
     }
 
     public int getBytesRead() { return this.bytesRead; }
@@ -42,16 +43,17 @@ public class AudioFrame {
 
     public double getFrequency() { return this.frequency; }
 
-    public double getSmoothedFrequency() { return this.smoothedFrequency; }
+    public double getAverageFrequency() { return this.averageFrequency; }
+
+    public Recorder getRecorder() { return this.listener.getRecorder(); }
 
 
 
-
-    public boolean hasRecentFrequency(double frequency, int buffer) {
+    public boolean hasRecentFrequency(double frequency, int tolerance) {
         double[] frequencyHistory = this.listener.frequencyHistory;
         for (double loopFreq : frequencyHistory) {
             if (frequency == loopFreq) return true;
-            if (loopFreq < frequency + buffer && loopFreq > frequency - buffer) return true;
+            if (Math.abs(loopFreq - frequency) <= tolerance) return true;
         }
         return false;
     }
@@ -73,7 +75,7 @@ public class AudioFrame {
         for (int i = 0;  i < fftData.length / 2; i += 2) {
             double real = fftData[i];
             double imaginary = fftData[i + 1];
-            double magnitude = Math.sqrt(real * real + imaginary * imaginary); // pythagorean therom!
+            double magnitude = Math.sqrt(real * real + imaginary * imaginary); // pythagorean theorem!
 
             if (magnitude > maxMagnitude) {
                 maxMagnitude = magnitude;

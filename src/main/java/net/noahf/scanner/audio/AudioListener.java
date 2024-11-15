@@ -1,21 +1,19 @@
 package net.noahf.scanner.audio;
 
+import net.noahf.scanner.recording.Recorder;
+
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.TargetDataLine;
 
 import java.util.function.Consumer;
-import java.util.function.Supplier;
-
-import static net.noahf.scanner.Main.BUFFER_SIZE;
 
 public class AudioListener {
 
-    public static final int SAMPLE_RATE = 44_100; // cd quality
+    public static final float SAMPLE_RATE = 44_100.0f; // cd quality
 
     private final AudioFormat format;
     private final Microphone microphone;
+    private final Recorder recorder;
 
     private Thread thread;
     private Consumer<AudioFrame> tick;
@@ -26,11 +24,13 @@ public class AudioListener {
     public AudioListener() throws LineUnavailableException {
         this.format = new AudioFormat(SAMPLE_RATE, 16, 1, true, true);
         this.microphone = new Microphone(this.format);
+        this.recorder = new Recorder(this);
     }
 
     public AudioFormat getAudioFormat() { return this.format; }
     public Microphone getMicrophone() { return this.microphone; }
     public Thread getListenerThread() { return this.thread; }
+    public Recorder getRecorder() { return this.recorder; }
 
     public void setTick(Consumer<AudioFrame> tick) throws InterruptedException {
         this.tick = tick;
