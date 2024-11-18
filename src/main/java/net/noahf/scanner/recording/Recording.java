@@ -23,6 +23,7 @@ public class Recording {
     private Date started;
     private File file;
     private AudioInputStream audioInputStream;
+    private TargetDataLine microphone;
 
     public Recording(AudioListener listener) {
         this.listener = listener;
@@ -40,11 +41,11 @@ public class Recording {
 
             System.out.println("Started a recording at " + LOG_DATE_FORMAT.format(new Date()));
 
-            TargetDataLine microphone = this.listener.getMicrophone().openNewLine();
-            if (!microphone.isActive()) {
-                microphone.start();
+            this.microphone = this.listener.getMicrophone().getDataLine();
+            if (!this.microphone.isActive()) {
+                this.microphone.start();
             }
-            microphone.flush();
+            this.microphone.flush();
 
             this.audioInputStream = new AudioInputStream(microphone);
 
@@ -57,13 +58,16 @@ public class Recording {
 
     public void end() {
         try {
-            TargetDataLine microphone = this.listener.getMicrophone().getDataLine();
-            microphone.stop();
-            microphone.flush();
+            this.microphone.stop();
+            this.microphone.flush();
 
             this.thread.interrupt();
 
-            System.out.println("Ended a recording at " + LOG_DATE_FORMAT.format(new Date()) + ", lasting " + (System.currentTimeMillis() - this.started.getTime()) + "ms");
+            this.microphone.start();
+
+            System.out.println("Ended a recording at " + LOG_DATE_FORMAT.format(new Date()) + ", lasting " +
+                    (((double)System.currentTimeMillis() - (double)this.started.getTime()) / 1000D) + "s"
+            );
         } catch (Exception exception) {
             throw new IllegalStateException("Failed to end and save recording of " + file.getAbsolutePath() + ": " + exception, exception);
         }

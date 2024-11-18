@@ -11,24 +11,16 @@ public class Main {
             AudioListener audioListener = new AudioListener();
 
             audioListener.setTick((frame) -> {
-                if (frame.getFrequency() <= 100.000D) { // likely just noise
+                if (!frame.hasSound()) {
                     if (frame.getRecorder().isRecording()) {
                         frame.getRecorder().stopRecording();
                     }
                     return;
                 }
 
-                System.out.println("Is recording: " + frame.getRecorder().isRecording());
-
                 if (!frame.getRecorder().isRecording()) {
                     frame.getRecorder().startRecording();
                 }
-
-//            System.out.println("\n\n\n\n"
-//                    + "Frequency: " + frame.getFrequency() + " Hz\n"
-//                    + "Smoothed Frequency: " + frame.getAverageFrequency() + " Hz\n"
-//                    + "Has frequency? " + frame.hasRecentFrequency(18244, 100)
-//            );
             });
         } catch (Exception exception) {
             throw new RuntimeException("ScannerListener failed to execute: " + exception, exception);

@@ -7,7 +7,7 @@ import java.sql.SQLOutput;
 
 public class Microphone {
 
-    public static int USE_MICROPHONE = 33;
+    public static int USE_MICROPHONE = 35;
 
     private final AudioFormat format;
     private final TargetDataLine microphone;
@@ -48,15 +48,6 @@ public class Microphone {
 
     public Mixer.Info getSelectedMicrophone() {
         return this.selectedMicrophone;
-    }
-
-
-    public TargetDataLine openNewLine() throws LineUnavailableException {
-        Mixer mixer = AudioSystem.getMixer(this.selectedMicrophone);
-        TargetDataLine microphone = (TargetDataLine) mixer.getLine(new DataLine.Info(TargetDataLine.class, format));
-        microphone.open(format, Main.BUFFER_SIZE);
-        microphone.start();
-        return microphone;
     }
 
 }

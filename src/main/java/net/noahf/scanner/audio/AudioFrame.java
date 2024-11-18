@@ -26,13 +26,15 @@ public class AudioFrame {
             samples[j] = ((buffer[i + 1] << 8) | (buffer[i] & 0xFF)) / 32768.0;
         }
 
-        this.applyHammingWindow();
+//        this.applyHammingWindow();
 
-        this.frequency = this.getDominantFrequency();
+        this.frequency = this.applyIgnoredFrequencies(this.getDominantFrequency());
 
         listener.frequencyHistory[listener.frequencyHistoryIndex] = this.frequency;
         listener.frequencyHistoryIndex = (listener.frequencyHistoryIndex + 1) % listener.frequencyHistory.length;
         this.averageFrequency = Arrays.stream(listener.frequencyHistory).average().orElse(this.frequency);
+
+        listener.lastHadSound = (this.hasSound() ? System.currentTimeMillis() : listener.lastHadSound);
     }
 
     public int getBytesRead() { return this.bytesRead; }
@@ -47,7 +49,13 @@ public class AudioFrame {
 
     public Recorder getRecorder() { return this.listener.getRecorder(); }
 
+    public long getLastSoundDetectionTime() { return this.listener.lastHadSound; }
 
+
+
+    public boolean hasSound() {
+        return (this.getFrequency() > 20.0D) || (System.currentTimeMillis() - this.getLastSoundDetectionTime() < 2000D);
+    }
 
     public boolean hasRecentFrequency(double frequency, int tolerance) {
         double[] frequencyHistory = this.listener.frequencyHistory;
@@ -86,11 +94,19 @@ public class AudioFrame {
         return (double) dominantIndex * AudioListener.SAMPLE_RATE / samples.length;
     }
 
-    private void applyHammingWindow() {
-        int length = samples.length;
-        for (int i = 0; i < length; i++) {
-            samples[i] *= 0.54 - 0.46 * Math.cos(2 * Math.PI * i / (length - 1));
-        }
+    private static final double[] IGNORED_FREQUENCIES = new double[]{59.21630859375D};
+
+    private double applyIgnoredFrequencies(double frequency) {
+        if (Arrays.stream(IGNORED_FREQUENCIES).anyMatch(f -> f == frequency))
+            return 0.0D;
+        return frequency;
     }
+
+//    private void applyHammingWindow() {
+//        int length = samples.length;
+//        for (int i = 0; i < length; i++) {
+//            samples[i] *= 0.54 - 0.46 * Math.cos(2 * Math.PI * i / (length - 1));
+//        }
+//    }
 
 }

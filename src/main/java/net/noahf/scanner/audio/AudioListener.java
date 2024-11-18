@@ -21,6 +21,8 @@ public class AudioListener {
     double[] frequencyHistory = new double[10];
     int frequencyHistoryIndex = 0;
 
+    long lastHadSound;
+
     public AudioListener() throws LineUnavailableException {
         this.format = new AudioFormat(SAMPLE_RATE, 16, 1, true, true);
         this.microphone = new Microphone(this.format);
