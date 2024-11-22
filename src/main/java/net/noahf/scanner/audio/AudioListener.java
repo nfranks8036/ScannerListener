@@ -1,12 +1,11 @@
 package net.noahf.scanner.audio;
 
-import net.noahf.scanner.recording.Recorder;
-
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.LineUnavailableException;
 
 import java.util.function.Consumer;
 
+@SuppressWarnings("CallToPrintStackTrace")
 public class AudioListener {
 
     public static final float SAMPLE_RATE = 44_100.0f; // cd quality
@@ -24,7 +23,9 @@ public class AudioListener {
     long lastHadSound;
 
     public AudioListener() throws LineUnavailableException {
-        this.format = new AudioFormat(SAMPLE_RATE, 16, 1, true, true);
+        this.format = new AudioFormat(
+                AudioFormat.Encoding.PCM_SIGNED, 44_100.0F, 16, 1, 2, 44100.0f, false
+        );
         this.microphone = new Microphone(this.format);
         this.recorder = new Recorder(this);
     }
@@ -40,9 +41,13 @@ public class AudioListener {
         this.thread = new Thread(() -> {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
-                    this.tick.accept(new AudioFrame(this));
+                    AudioFrame frame = new AudioFrame(this);
+
+                    this.getRecorder().tick(frame);
+                    this.tick.accept(frame);
                 } catch (Exception exception) {
                     System.out.println("An error occurred with the audio listener: " + exception);
+                    exception.printStackTrace();
                     Thread.currentThread().interrupt();
                 }
             }

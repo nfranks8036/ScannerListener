@@ -1,6 +1,4 @@
-package net.noahf.scanner.recording;
-
-import net.noahf.scanner.audio.AudioListener;
+package net.noahf.scanner.audio;
 
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -24,6 +22,8 @@ public class Recording {
     private File file;
     private AudioInputStream audioInputStream;
     private TargetDataLine microphone;
+
+    private double[][] soundData;
 
     public Recording(AudioListener listener) {
         this.listener = listener;
@@ -72,5 +72,8 @@ public class Recording {
             throw new IllegalStateException("Failed to end and save recording of " + file.getAbsolutePath() + ": " + exception, exception);
         }
     }
+
+    public File getFile() { return this.file; }
+    public Date getTimeStarted() { return this.started; }
 
 }

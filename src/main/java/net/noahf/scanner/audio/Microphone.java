@@ -50,4 +50,8 @@ public class Microphone {
         return this.selectedMicrophone;
     }
 
+    public AudioFormat getAudioFormat() {
+        return this.format;
+    }
+
 }

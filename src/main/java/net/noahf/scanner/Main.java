@@ -11,7 +11,8 @@ public class Main {
             AudioListener audioListener = new AudioListener();
 
             audioListener.setTick((frame) -> {
-                if (!frame.hasSound()) {
+//                System.out.println("SOUND DETECTED: " + frame.getVolume() + " dB, " + frame.getFrequency() + " MHz, " + (System.currentTimeMillis() - frame.getLastSoundDetectionTime()) + "ms");
+                if (!frame.hasSoundRecently()) {
                     if (frame.getRecorder().isRecording()) {
                         frame.getRecorder().stopRecording();
                     }

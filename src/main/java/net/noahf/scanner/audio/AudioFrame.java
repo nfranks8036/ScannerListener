@@ -1,7 +1,6 @@
 package net.noahf.scanner.audio;
 
 import net.noahf.scanner.Main;
-import net.noahf.scanner.recording.Recorder;
 import org.jtransforms.fft.DoubleFFT_1D;
 
 import javax.sound.sampled.TargetDataLine;
@@ -11,14 +10,17 @@ public class AudioFrame {
 
     private final AudioListener listener;
 
-    private final byte[] buffer = new byte[Main.BUFFER_SIZE];
-    private final double[] samples = new double[Main.BUFFER_SIZE / 2];
+    private final byte[] buffer;
+    private final double[] samples;
     private final int bytesRead;
     private final double frequency;
+    private final double volume;
     private final double averageFrequency;
 
     AudioFrame(AudioListener listener) {
         this.listener = listener;
+        this.buffer = new byte[Main.BUFFER_SIZE];
+        this.samples = new double[Main.BUFFER_SIZE / 2];
 
         TargetDataLine data = listener.getMicrophone().getDataLine();
         this.bytesRead = data.read(buffer, 0, buffer.length);
@@ -29,6 +31,7 @@ public class AudioFrame {
 //        this.applyHammingWindow();
 
         this.frequency = this.applyIgnoredFrequencies(this.getDominantFrequency());
+        this.volume = this.getCalculatedVolume();
 
         listener.frequencyHistory[listener.frequencyHistoryIndex] = this.frequency;
         listener.frequencyHistoryIndex = (listener.frequencyHistoryIndex + 1) % listener.frequencyHistory.length;
@@ -43,6 +46,8 @@ public class AudioFrame {
 
     public double[] getSamples() { return this.samples; }
 
+    public double getVolume() { return this.volume; }
+
     public double getFrequency() { return this.frequency; }
 
     public double getAverageFrequency() { return this.averageFrequency; }
@@ -53,8 +58,13 @@ public class AudioFrame {
 
 
 
+    public boolean hasSoundRecently() {
+        return this.hasSound()
+                || (System.currentTimeMillis() - this.getLastSoundDetectionTime() < 2000D);
+    }
+
     public boolean hasSound() {
-        return (this.getFrequency() > 20.0D) || (System.currentTimeMillis() - this.getLastSoundDetectionTime() < 2000D);
+        return this.getVolume() > 0.0D;
     }
 
     public boolean hasRecentFrequency(double frequency, int tolerance) {
@@ -65,6 +75,7 @@ public class AudioFrame {
         }
         return false;
     }
+
 
     /**
      * Fourier Transform
@@ -92,6 +103,24 @@ public class AudioFrame {
         }
 
         return (double) dominantIndex * AudioListener.SAMPLE_RATE / samples.length;
+    }
+
+    private double getCalculatedVolume() {
+        long sum = 0;
+
+        for (int i = 0; i < bytesRead; i += 2) {
+            short sample = (short) (buffer[i + 1] << 8 | (buffer[i] & 0xFF));
+            sum += (long) sample * sample;
+        }
+
+        double rms = Math.sqrt((double) sum / ((double) this.getBuffer().length / 2));
+        double volume = rms / Short.MAX_VALUE;
+
+        if (volume <= 0.05) { // negligible volume
+            return 0.0F;
+        }
+
+        return volume;
     }
 
     private static final double[] IGNORED_FREQUENCIES = new double[]{59.21630859375D};
